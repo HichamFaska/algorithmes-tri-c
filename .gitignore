@@ -4,7 +4,7 @@
 
 # Données générées
 
-data/input/*.txt
+data/input/random/*.txt
 
 # résultats générés
 
