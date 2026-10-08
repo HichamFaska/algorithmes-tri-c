@@ -1,0 +1,11 @@
+# Binaires et objets
+*.o
+*.exe
+
+# Données générées
+data/input/*.txt
+
+# Sorties (graphiques GNUplot)
+*.png
+*.svg
+*.log
