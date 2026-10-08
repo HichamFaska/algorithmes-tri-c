@@ -35,6 +35,8 @@ void run_benchmark(const char *filename, int size)
 
     insertion_sort(insertion_data, size);
 
+    printf("Tri termine : n = %d\n", size);
+
     free(insertion_data);
 
     /*
