@@ -3,9 +3,30 @@
 *.exe
 
 # Données générées
+
 data/input/*.txt
+
+# résultats générés
+
+results/raw/*.csv
 
 # Sorties (graphiques GNUplot)
 *.png
 *.svg
 *.log
+
+
+# Temporary files
+
+*.tmp
+*.log
+
+# IDE / Editor
+
+.vscode/
+.idea/
+
+# OS files
+
+.DS_Store
+Thumbs.db
