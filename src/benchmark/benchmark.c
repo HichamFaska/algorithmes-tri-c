@@ -57,18 +57,7 @@ void run_all_benchmarks(const int sizes[], int count)
 static void benchmark_insertion_sort(const int *data, int size)
 {
 
-    int *working_data = malloc(size * sizeof(int));
-
-    if (working_data == NULL)
-    {
-        perror("Erreur d'allocation memoire");
-        return;
-    }
-
-    for (int i = 0; i < size; i++)
-    {
-        working_data[i] = data[i];
-    }
+    int *working_data = copy_data(data, size);
 
     clock_t start = clock();
 
