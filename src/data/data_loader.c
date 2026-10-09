@@ -37,3 +37,27 @@ int *load_data(const char *filename, int size)
 
     return data;
 }
+
+
+int *copy_data(const int *data, int size)
+{
+    if (data == NULL || size <= 0)
+    {
+        return NULL;
+    }
+
+    int *copy = malloc((size_t)size * sizeof(int));
+
+    if (copy == NULL)
+    {
+        perror("Erreur d'allocation memoire");
+        return NULL;
+    }
+
+    for (int i = 0; i < size; i++)
+    {
+        copy[i] = data[i];
+    }
+
+    return copy;
+}
