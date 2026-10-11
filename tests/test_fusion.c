@@ -4,22 +4,22 @@
 
 int main(void)
 {
-int data[] = {5, 3, 4, 1, 2};
+    int data[] = {5, 3, 4, 1, 2};
 
-int size = sizeof(data) / sizeof(data[0]);
+    int size = sizeof(data) / sizeof(data[0]);
 
-SortStats stats = merge_sort(data, size);
+    SortStats stats = merge_sort(data, size);
 
-printf("Tableau trie : ");
+    printf("Tableau trie : ");
 
-for (int i = 0; i < size; i++)
-{
-    printf("%d ", data[i]);
-}
+    for (int i = 0; i < size; i++)
+    {
+        printf("%d ", data[i]);
+    }
 
-printf("\nComparaisons : %lld\n", stats.comparisons);
-printf("Deplacements : %lld\n", stats.moves);
+    printf("\nComparaisons : %lld\n", stats.comparisons);
+    printf("Deplacements : %lld\n", stats.moves);
 
-return 0;
+    return 0;
 
 }
