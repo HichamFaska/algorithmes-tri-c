@@ -8,6 +8,7 @@
 #include "sorting/bubble_sort.h"
 #include "sorting/merge_sort.h"
 #include "sorting/heap_sort.h"
+#include "sorting/selection_sort.h"
 #include "results_writer.h"
 
 #define RESULTS_FILE "results/raw/benchmarks.csv"
@@ -16,6 +17,7 @@ static void benchmark_insertion_sort(const int *data, int size);
 static void benchmark_bubble_sort(const int *data, int size);
 static void benchmark_merge_sort(const int *data, int size);
 static void benchmark_heap_sort(const int *data, int size);
+static void benchmark_selection_sort(const int *data, int size);
 
 void run_benchmark(const char *filename, int size)
 {
@@ -36,11 +38,11 @@ void run_benchmark(const char *filename, int size)
     benchmark_bubble_sort(data, size);
     benchmark_merge_sort(data, size);
     benchmark_heap_sort(data, size);
+    benchmark_selection_sort(data, size);
 
     /*
      * Les autres appels seront ajoutés progressivement :
      *
-     * benchmark_selection_sort(data, size);
      * benchmark_quick_sort(data, size);
      */
 
@@ -202,6 +204,40 @@ static void benchmark_heap_sort(const int *data, int size)
     }
 
     printf("Heap Sort | n = %d | %.6f s | Comparaisons = %lld | Deplacements = %lld\n", size, time_taken, stats.comparisons, stats.moves);
+
+    free(working_data);
+}
+
+static void benchmark_selection_sort(const int *data, int size)
+{
+    int *working_data = copy_data(data, size);
+
+    if (working_data == NULL)
+    {
+        return;
+    }
+
+    clock_t start = clock();
+
+    SortStats stats = selection_sort(working_data, size);
+
+    clock_t end = clock();
+
+    if (start == (clock_t)-1 || end == (clock_t)-1)
+    {
+        fprintf(stderr, "Erreur lors de la mesure du temps.\n");
+        free(working_data);
+        return;
+    }
+
+    double time_taken = (double)(end - start) / CLOCKS_PER_SEC;
+
+    if (!append_result(RESULTS_FILE, "Selection Sort", size, time_taken, stats))
+    {
+        fprintf(stderr, "Impossible d'enregistrer les resultats.\n");
+    }
+
+    printf("Selection Sort | n = %d | %.6f s | Comparaisons = %lld | Deplacements = %lld\n", size, time_taken, stats.comparisons, stats.moves);
 
     free(working_data);
 }
