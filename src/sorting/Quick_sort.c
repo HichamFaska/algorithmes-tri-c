@@ -1,24 +1,100 @@
-#include <stdio.h>
+#include <stddef.h>
 
 #include "sorting/quick_sort.h"
 
-int main(void)
+/*
+ * Echange deux elements du tableau.
+ * Chaque ecriture dans le tableau compte comme un mouvement.
+ */
+static void swap(int *a, int *b, SortStats *stats)
 {
-    int data[] = {5, 3, 4, 1, 2};
+    int temp = *a;
+    *a = *b;
+    *b = temp;
 
-    int size = sizeof(data) / sizeof(data[0]);
+    stats->moves += 2;
+}
 
-    SortStats stats = quick_sort(data, size);
+/*
+ * Trie la portion data[low..high].
+ * Le pivot est la valeur situee au milieu de la portion.
+ */
+static void quick_sort_recursive(
+    int data[],
+    int low,
+    int high,
+    SortStats *stats
+)
+{
+    int i = low;
+    int j = high;
+    int pivot = data[low + (high - low) / 2];
 
-    printf("Tableau trie : ");
-
-    for (int i = 0; i < size; i++)
+    while (i <= j)
     {
-        printf("%d ", data[i]);
+        /*
+         * Rechercher un element >= pivot depuis la gauche.
+         */
+        while (i <= high)
+        {
+            stats->comparisons++;
+
+            if (data[i] >= pivot)
+            {
+                break;
+            }
+
+            i++;
+        }
+
+        /*
+         * Rechercher un element <= pivot depuis la droite.
+         */
+        while (j >= low)
+        {
+            stats->comparisons++;
+
+            if (data[j] <= pivot)
+            {
+                break;
+            }
+
+            j--;
+        }
+
+        if (i <= j)
+        {
+            if (i != j)
+            {
+                swap(&data[i], &data[j], stats);
+            }
+
+            i++;
+            j--;
+        }
     }
 
-    printf("\nComparaisons : %lld\n", stats.comparisons);
-    printf("Deplacements : %lld\n", stats.moves);
+    if (low < j)
+    {
+        quick_sort_recursive(data, low, j, stats);
+    }
 
-    return 0;
+    if (i < high)
+    {
+        quick_sort_recursive(data, i, high, stats);
+    }
+}
+
+SortStats quick_sort(int *data, int size)
+{
+    SortStats stats = {0, 0};
+
+    if (data == NULL || size <= 1)
+    {
+        return stats;
+    }
+
+    quick_sort_recursive(data, 0, size - 1, &stats);
+
+    return stats;
 }
