@@ -12,6 +12,7 @@ results/raw/*.csv
 
 # Sorties (graphiques GNUplot)
 *.png
+!results/graphs/*.png
 *.svg
 *.log
 
