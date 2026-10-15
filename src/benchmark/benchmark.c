@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
+#include <Windows.h>
 
 #include "benchmark.h"
 #include "data_loader.h"
@@ -13,6 +13,100 @@
 #include "results_writer.h"
 
 #define RESULTS_FILE "results/raw/benchmarks.csv"
+
+/*
+ * Les algorithmes O(n log n) sont rapides : on peut repeter davantage.
+ * Les algorithmes O(n^2) sont lents : on limite les repetitions.
+ */
+#define FAST_REPETITIONS 7
+#define SLOW_REPETITIONS 3
+
+typedef SortStats (*SortFunction)(int *data, int size);
+
+static double get_time_seconds(void)
+{
+    LARGE_INTEGER frequency;
+    LARGE_INTEGER counter;
+
+    QueryPerformanceFrequency(&frequency);
+    QueryPerformanceCounter(&counter);
+
+    return (double)counter.QuadPart / (double)frequency.QuadPart;
+}
+
+static double compute_median(double *values, int count)
+{
+    for (int i = 1; i < count; i++)
+    {
+        double key = values[i];
+        int j = i - 1;
+
+        while (j >= 0 && values[j] > key)
+        {
+            values[j + 1] = values[j];
+            j--;
+        }
+
+        values[j + 1] = key;
+    }
+
+    return values[count / 2];
+}
+
+static void benchmark_algorithm(const char *name, SortFunction sort, const int *data, int size, int repetitions)
+{
+    int *working_data[repetitions];
+
+    for (int i = 0; i < repetitions; i++)
+    {
+        working_data[i] = copy_data(data, size);
+
+        if (working_data[i] == NULL)
+        {
+            fprintf(stderr, "Erreur d'allocation memoire.\n");
+
+            for (int j = 0; j < i; j++)
+            {
+                free(working_data[j]);
+            }
+
+            return;
+        }
+    }
+
+    double times[repetitions];
+    SortStats stats = {0, 0};
+
+    for (int i = 0; i < repetitions; i++)
+    {
+        double start = get_time_seconds();
+
+        SortStats current_stats = sort(working_data[i], size);
+
+        double end = get_time_seconds();
+
+        times[i] = end - start;
+
+        if (i == 0)
+        {
+            stats = current_stats;
+        }
+    }
+
+    double time_taken = compute_median(times, repetitions);
+
+    if (!append_result(RESULTS_FILE, name, size, time_taken, stats))
+    {
+        fprintf(stderr, "Impossible d'enregistrer les resultats.\n");
+    }
+
+    printf("%s | n = %d | %.9f s | Comparaisons = %lld | Deplacements = %lld\n", name, size, time_taken, stats.comparisons, stats.moves);
+
+    for (int i = 0; i < repetitions; i++)
+    {
+        free(working_data[i]);
+    }
+}
 
 static void benchmark_insertion_sort(const int *data, int size);
 static void benchmark_bubble_sort(const int *data, int size);
@@ -67,208 +161,32 @@ void run_all_benchmarks(const int sizes[], int count)
     }
 }
 
-
 static void benchmark_insertion_sort(const int *data, int size)
 {
-
-    int *working_data = copy_data(data, size);
-
-    if (working_data == NULL)
-    {
-        return;
-    }
-
-    clock_t start = clock();
-
-    SortStats stats = insertion_sort(working_data, size);
-
-    clock_t end = clock();
-
-    if (start == (clock_t)-1 || end == (clock_t)-1)
-    {
-        fprintf(stderr, "Erreur lors de la mesure du temps.\n");
-        free(working_data);
-        return;
-    }
-
-    double time_taken = (double)(end - start) / CLOCKS_PER_SEC;
-
-    if (!append_result(RESULTS_FILE, "Insertion Sort", size, time_taken, stats))
-    {
-        fprintf(stderr, "Impossible d'enregistrer les resultats.\n");
-    }
-
-    printf("Insertion Sort | n = %d | %.6f s | Comparaisons = %lld | Deplacements = %lld\n", size, time_taken, stats.comparisons, stats.moves);
-
-    free(working_data);
+    benchmark_algorithm("Insertion Sort", insertion_sort, data, size, SLOW_REPETITIONS);
 }
 
 static void benchmark_bubble_sort(const int *data, int size)
 {
-    int *working_data = copy_data(data, size);
-
-    if (working_data == NULL)
-    {
-        return;
-    }
-
-    clock_t start = clock();
-
-    SortStats stats = bubble_sort(working_data, size);
-
-    clock_t end = clock();
-
-    if (start == (clock_t)-1 || end == (clock_t)-1)
-    {
-        fprintf(stderr, "Erreur lors de la mesure du temps.\n");
-        free(working_data);
-        return;
-    }
-
-    double time_taken = (double)(end - start) / CLOCKS_PER_SEC;
-
-    if (!append_result(RESULTS_FILE, "Bubble Sort", size, time_taken, stats))
-    {
-        fprintf(stderr, "Impossible d'enregistrer les resultats.\n");
-    }
-
-    printf("Bubble Sort | n = %d | %.6f s | Comparaisons = %lld | Deplacements = %lld\n", size, time_taken, stats.comparisons, stats.moves);
-
-    free(working_data);
+    benchmark_algorithm("Bubble Sort", bubble_sort, data, size, SLOW_REPETITIONS);
 }
 
 static void benchmark_merge_sort(const int *data, int size)
 {
-    int *working_data = copy_data(data, size);
-
-    if (working_data == NULL)
-    {
-        return;
-    }
-
-    clock_t start = clock();
-
-    SortStats stats = merge_sort(working_data, size);
-
-    clock_t end = clock();
-
-    if (start == (clock_t)-1 || end == (clock_t)-1)
-    {
-        fprintf(stderr, "Erreur lors de la mesure du temps.\n");
-        free(working_data);
-        return;
-    }
-
-    double time_taken = (double)(end - start) / CLOCKS_PER_SEC;
-
-    if (!append_result(RESULTS_FILE, "Merge Sort", size, time_taken, stats))
-    {
-        fprintf(stderr, "Impossible d'enregistrer les resultats.\n");
-    }
-
-    printf("Merge Sort | n = %d | %.6f s | Comparaisons = %lld | Deplacements = %lld\n", size, time_taken, stats.comparisons, stats.moves);
-
-    free(working_data);
+    benchmark_algorithm("Merge Sort", merge_sort, data, size, FAST_REPETITIONS);
 }
 
 static void benchmark_heap_sort(const int *data, int size)
 {
-    int *working_data = copy_data(data, size);
-
-    if (working_data == NULL)
-    {
-        return;
-    }
-
-    clock_t start = clock();
-
-    SortStats stats = heap_sort(working_data, size);
-
-    clock_t end = clock();
-
-    if (start == (clock_t)-1 || end == (clock_t)-1)
-    {
-        fprintf(stderr, "Erreur lors de la mesure du temps.\n");
-        free(working_data);
-        return;
-    }
-
-    double time_taken = (double)(end - start) / CLOCKS_PER_SEC;
-
-    if (!append_result(RESULTS_FILE, "Heap Sort", size, time_taken, stats))
-    {
-        fprintf(stderr, "Impossible d'enregistrer les resultats.\n");
-    }
-
-    printf("Heap Sort | n = %d | %.6f s | Comparaisons = %lld | Deplacements = %lld\n", size, time_taken, stats.comparisons, stats.moves);
-
-    free(working_data);
+    benchmark_algorithm("Heap Sort", heap_sort, data, size, FAST_REPETITIONS);
 }
 
 static void benchmark_selection_sort(const int *data, int size)
 {
-    int *working_data = copy_data(data, size);
-
-    if (working_data == NULL)
-    {
-        return;
-    }
-
-    clock_t start = clock();
-
-    SortStats stats = selection_sort(working_data, size);
-
-    clock_t end = clock();
-
-    if (start == (clock_t)-1 || end == (clock_t)-1)
-    {
-        fprintf(stderr, "Erreur lors de la mesure du temps.\n");
-        free(working_data);
-        return;
-    }
-
-    double time_taken = (double)(end - start) / CLOCKS_PER_SEC;
-
-    if (!append_result(RESULTS_FILE, "Selection Sort", size, time_taken, stats))
-    {
-        fprintf(stderr, "Impossible d'enregistrer les resultats.\n");
-    }
-
-    printf("Selection Sort | n = %d | %.6f s | Comparaisons = %lld | Deplacements = %lld\n", size, time_taken, stats.comparisons, stats.moves);
-
-    free(working_data);
+    benchmark_algorithm("Selection Sort", selection_sort, data, size, SLOW_REPETITIONS);
 }
 
 static void benchmark_quick_sort(const int *data, int size)
 {
-    int *working_data = copy_data(data, size);
-
-    if (working_data == NULL)
-    {
-        return;
-    }
-
-    clock_t start = clock();
-
-    SortStats stats = quick_sort(working_data, size);
-
-    clock_t end = clock();
-
-    if (start == (clock_t)-1 || end == (clock_t)-1)
-    {
-        fprintf(stderr, "Erreur lors de la mesure du temps.\n");
-        free(working_data);
-        return;
-    }
-
-    double time_taken = (double)(end - start) / CLOCKS_PER_SEC;
-
-    if (!append_result(RESULTS_FILE, "Quick Sort", size, time_taken, stats))
-    {
-        fprintf(stderr, "Impossible d'enregistrer les resultats.\n");
-    }
-
-    printf("Quick Sort | n = %d | %.6f s | Comparaisons = %lld | Deplacements = %lld\n", size, time_taken, stats.comparisons, stats.moves);
-
-    free(working_data);
+    benchmark_algorithm("Quick Sort", quick_sort, data, size, FAST_REPETITIONS);
 }
